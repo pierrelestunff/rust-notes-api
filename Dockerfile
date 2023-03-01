@@ -11,7 +11,7 @@ RUN --mount=type=cache,target=/app/target \
 		set -eux; \
 		rustup install stable; \
 	 	cargo build --release; \
-		objcopy --compress-debug-sections target/release/hello-axum ./hello-axum
+		objcopy --compress-debug-sections target/release/rust-notes-api ./rust-notes-api
 
 ################################################################################
 FROM debian:11.3-slim
@@ -29,3 +29,4 @@ WORKDIR app
 
 COPY --from=builder /app/rust-notes-api ./rust-notes-api
 CMD ["./rust-notes-api"]
+
