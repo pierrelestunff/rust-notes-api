@@ -4,26 +4,35 @@ use r2d2;
 use openssl::ssl::{SslConnector, SslMethod, SslVerifyMode};
 use postgres_openssl::MakeTlsConnector;
 use r2d2_postgres::{PostgresConnectionManager};
+use serde::Deserialize;
 
 type Pool = r2d2::Pool<PostgresConnectionManager<MakeTlsConnector>>;
 pub type DbConnection = r2d2::PooledConnection<PostgresConnectionManager<MakeTlsConnector>>;
 
+use std::fmt;
+
+#[derive(Deserialize, Debug)]
+struct Config {
+    db_host: String,
+    db_user: String,
+    db_password: String,
+    db_name: String
+}
+
+impl fmt::Display for Config {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "host={} user={} password={} dbname={}", self.db_host, self.db_user, self.db_password, self.db_name)
+    }
+}
+
 lazy_static! {
     static ref POOL : Pool = {
+        let c = envy::from_env::<Config>().expect("Please provide DB_HOST, DB_USER, DB_PASSWORD and DB_NAME env var");
         let mut builder = SslConnector::builder(SslMethod::tls()).unwrap();
         builder.set_verify(SslVerifyMode::NONE);
         let connector = MakeTlsConnector::new(builder.build());
-
-        /*let config = Config::new()
-        .host("ep-orange-flower-377957.eu-central-1.aws.neon.tech")
-        .user("pierrelestunff")
-        .port(5432)
-        .password("c0pjCDfAnI2N")
-        .ssl_mode(SslMode.Require)
-        .dbname("neondb");*/
-        let manager = PostgresConnectionManager::new("host=ep-orange-flower-377957.eu-central-1.aws.neon.tech user=pierrelestunff password=c0pjCDfAnI2N dbname=neondb".parse().unwrap(), connector);
+        let manager = PostgresConnectionManager::new(c.to_string().parse().unwrap(), connector);
         Pool::new(manager).unwrap()
-        // Pool::new(manager).expect("Failed to create db pool")
     };
 }
 

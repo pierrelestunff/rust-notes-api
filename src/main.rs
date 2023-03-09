@@ -27,24 +27,9 @@ async fn http_server_run() {
         .unwrap();
 }
 
-
-
-/*#[tokio::main]
-async*/ fn main() -> std::io::Result<()> {
+fn main() -> std::io::Result<()> {
     db::init();
-    //std::thread::spawn(|| {
-    //    println!("spawn !");
-        http_server_run();
-    //});
-    /*for row in client.execute("SELECT * FROM notes", &[])? {
-        let note = Note{
-            id: row.get(0),
-            name: row.get(1),
-        };
-        println!("Note = {} {}", note.id, note.name);
-    }*/
-
-
+    http_server_run();
     Ok(())
 }
 
