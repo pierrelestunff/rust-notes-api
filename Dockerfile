@@ -1,32 +1,28 @@
-# syntax = docker/dockerfile:1.4
+FROM clux/muslrust AS build
+WORKDIR /usr/src
 
-FROM rust:1.61.0-slim-bullseye AS builder
+# Update CA Certificates
+RUN apt update -y && apt install -y ca-certificates
+RUN update-ca-certificates
 
-WORKDIR /app
-COPY . .
-RUN --mount=type=cache,target=/app/target \
-		--mount=type=cache,target=/usr/local/cargo/registry \
-		--mount=type=cache,target=/usr/local/cargo/git \
-		--mount=type=cache,target=/usr/local/rustup \
-		set -eux; \
-		rustup install stable; \
-	 	cargo build --release; \
-		objcopy --compress-debug-sections target/release/rust-notes-api ./rust-notes-api
+# Build dependencies and rely on cache if Cargo.toml
+# or Cargo.lock haven't changed
+RUN USER=root cargo new rust-notes-api
+WORKDIR /usr/src/rust-notes-api
+COPY Cargo.toml Cargo.lock ./
+RUN cargo build --target x86_64-unknown-linux-musl --release
 
-################################################################################
-FROM debian:11.3-slim
+# Copy the source and build the application.
+COPY src ./src
+RUN cargo install --target x86_64-unknown-linux-musl --path .
 
-RUN set -eux; \
-		export DEBIAN_FRONTEND=noninteractive; \
-	  apt update; \
-		apt install --yes --no-install-recommends bind9-dnsutils iputils-ping iproute2 curl ca-certificates htop; \
-		apt clean autoclean; \
-		apt autoremove --yes; \
-		rm -rf /var/lib/{apt,dpkg,cache,log}/; \
-		echo "Installed base utils!"
+# Second stage
+FROM scratch
 
-WORKDIR app
+# Copy the CA certificates
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+# Copy the statically-linked binary to the second stage
+COPY --from=build /root/.cargo/bin/rust-notes-api .
+USER 1000
 
-COPY --from=builder /app/rust-notes-api ./rust-notes-api
 CMD ["./rust-notes-api"]
-

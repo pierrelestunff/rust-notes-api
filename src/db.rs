@@ -1,7 +1,7 @@
 use crate::error_handler::CustomError;
 use lazy_static::lazy_static;
 use r2d2;
-use openssl::ssl::{SslConnector, SslMethod};
+use openssl::ssl::{SslConnector, SslMethod, SslVerifyMode};
 use postgres_openssl::MakeTlsConnector;
 use r2d2_postgres::{PostgresConnectionManager};
 
@@ -10,8 +10,10 @@ pub type DbConnection = r2d2::PooledConnection<PostgresConnectionManager<MakeTls
 
 lazy_static! {
     static ref POOL : Pool = {
-        let builder = SslConnector::builder(SslMethod::tls()).unwrap();
+        let mut builder = SslConnector::builder(SslMethod::tls()).unwrap();
+        builder.set_verify(SslVerifyMode::NONE);
         let connector = MakeTlsConnector::new(builder.build());
+
         /*let config = Config::new()
         .host("ep-orange-flower-377957.eu-central-1.aws.neon.tech")
         .user("pierrelestunff")
