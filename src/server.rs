@@ -49,7 +49,7 @@ pub async fn run() {
         .layer(middleware::from_fn(require_authentication))
     );
 
-    let addr = "[::]:3032".parse().unwrap();
+    let addr = "[::]:8080".parse().unwrap();
     println!("Listening on http://{addr}");
     Server::bind(&addr)
         .serve(app.into_make_service())
