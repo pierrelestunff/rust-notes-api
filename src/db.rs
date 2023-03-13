@@ -36,9 +36,9 @@ lazy_static! {
     };
 }
 
-pub fn init() {
+pub async fn init() {
     lazy_static::initialize(&POOL);
-    connection();//.expect("Failed to get db connection");
+    //connection();//.expect("Failed to get db connection");
     //embedded_migrations::run(&conn).unwrap();
 }
 
